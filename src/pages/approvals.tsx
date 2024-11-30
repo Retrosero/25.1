@@ -1,11 +1,25 @@
 import { useState, useRef } from 'react';
 import { Search, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApprovals, ApprovalStatus, ApprovalType } from '../hooks/use-approvals';
+import { useAccessRequests } from '../hooks/use-access-requests';
+import { useAuth } from '../hooks/use-auth';
 import { formatCurrency } from '../lib/utils';
 import { cn } from '../lib/utils';
 import { ApprovalDetail } from '../components/approvals/approval-detail';
 
-type TabType = 'all' | 'sales' | 'payments' | 'expenses' | 'returns' | 'products' | 'orders' | 'inventory';
+const tabs: { id: TabType; label: string }[] = [
+  { id: 'all', label: 'Tümü' },
+  { id: 'sales', label: 'Satışlar' },
+  { id: 'payments', label: 'Tahsilatlar' },
+  { id: 'expenses', label: 'Tediyeler' },
+  { id: 'returns', label: 'İadeler' },
+  { id: 'products', label: 'Ürün Değişiklikleri' },
+  { id: 'orders', label: 'Siparişler' },
+  { id: 'inventory', label: 'Sayım' },
+  { id: 'access', label: 'Erişim İstekleri' },
+];
+
+type TabType = 'all' | 'sales' | 'payments' | 'expenses' | 'returns' | 'products' | 'orders' | 'inventory' | 'access';
 
 export function ApprovalsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('all');
@@ -13,18 +27,14 @@ export function ApprovalsPage() {
   const [selectedStatus, setSelectedStatus] = useState<ApprovalStatus>('pending');
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const { approvals, updateApprovalStatus } = useApprovals();
+  const { requests, updateRequestStatus } = useAccessRequests();
+  const { user } = useAuth();
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const tabs: { id: TabType; label: string }[] = [
-    { id: 'all', label: 'Tümü' },
-    { id: 'sales', label: 'Satışlar' },
-    { id: 'payments', label: 'Tahsilatlar' },
-    { id: 'expenses', label: 'Tediyeler' },
-    { id: 'returns', label: 'İadeler' },
-    { id: 'products', label: 'Ürün Değişiklikleri' },
-    { id: 'orders', label: 'Siparişler' },
-    { id: 'inventory', label: 'Sayım' },
-  ];
+  // Only show access tab for admin
+  const availableTabs = tabs.filter(tab => 
+    tab.id !== 'access' || user?.role === 'admin'
+  );
 
   const pendingCounts = {
     all: approvals.filter(a => a.status === 'pending').length,
@@ -35,6 +45,7 @@ export function ApprovalsPage() {
     products: approvals.filter(a => a.status === 'pending' && a.type === 'product').length,
     orders: approvals.filter(a => a.status === 'pending' && a.type === 'order_change').length,
     inventory: approvals.filter(a => a.status === 'pending' && a.type === 'inventory').length,
+    access: requests.filter(r => r.status === 'pending').length,
   };
 
   const filteredApprovals = approvals
@@ -88,7 +99,7 @@ export function ApprovalsPage() {
           style={{ scrollBehavior: 'smooth' }}
         >
           <div className="flex gap-2 min-w-max px-2 py-1">
-            {tabs.map(tab => (
+            {availableTabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -150,64 +161,136 @@ export function ApprovalsPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {filteredApprovals.map((approval) => (
-          <div
-            key={approval.id}
-            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-            onClick={() => setSelectedApproval(approval)}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    'px-2 py-0.5 text-xs rounded-full',
-                    approval.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : approval.status === 'approved'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  )}>
-                    {approval.status === 'pending' ? 'Bekliyor' :
-                     approval.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(approval.date).toLocaleString('tr-TR')}
-                  </span>
+      {activeTab === 'access' ? (
+        <div className="space-y-4">
+          {requests
+            .filter(request => request.status === selectedStatus)
+            .filter(request =>
+              !searchQuery ||
+              request.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              request.permissionName.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map((request) => (
+              <div
+                key={request.id}
+                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium">{request.userName}</h3>
+                      <span className={cn(
+                        'px-2 py-0.5 text-xs rounded-full',
+                        request.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : request.status === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      )}>
+                        {request.status === 'pending' ? 'Bekliyor' :
+                         request.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {request.permissionName}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(request.requestDate).toLocaleString('tr-TR')}
+                    </p>
+                  </div>
+                  {request.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateRequestStatus(request.id, 'approved', user?.name || '')}
+                        className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/50 rounded-lg"
+                      >
+                        <Check className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => updateRequestStatus(request.id, 'rejected', user?.name || '')}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-lg"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <p className="font-medium mt-1">{approval.description}</p>
-                <p className="text-sm text-gray-500">İsteyen: {approval.user}</p>
+                {request.note && (
+                  <p className="text-sm text-gray-500 mt-2">Not: {request.note}</p>
+                )}
+                {request.responseDate && (
+                  <div className="mt-2 text-sm">
+                    <p className="text-gray-500">
+                      Yanıtlayan: {request.respondedBy}
+                    </p>
+                    <p className="text-gray-500">
+                      Yanıt Tarihi: {new Date(request.responseDate).toLocaleString('tr-TR')}
+                    </p>
+                  </div>
+                )}
               </div>
-              {approval.status === 'pending' && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateApprovalStatus(approval.id, 'approved');
-                    }}
-                    className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/50 rounded-lg"
-                  >
-                    <Check className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateApprovalStatus(approval.id, 'rejected');
-                    }}
-                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-lg"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+            ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredApprovals.map((approval) => (
+            <div
+              key={approval.id}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+              onClick={() => setSelectedApproval(approval)}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'px-2 py-0.5 text-xs rounded-full',
+                      approval.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : approval.status === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    )}>
+                      {approval.status === 'pending' ? 'Bekliyor' :
+                       approval.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {new Date(approval.date).toLocaleString('tr-TR')}
+                    </span>
+                  </div>
+                  <p className="font-medium mt-1">{approval.description}</p>
+                  <p className="text-sm text-gray-500">İsteyen: {approval.user}</p>
                 </div>
+                {approval.status === 'pending' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateApprovalStatus(approval.id, 'approved');
+                      }}
+                      className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/50 rounded-lg"
+                    >
+                      <Check className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateApprovalStatus(approval.id, 'rejected');
+                      }}
+                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-lg"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {selectedApproval?.id === approval.id && (
+                <ApprovalDetail approval={approval} />
               )}
             </div>
-
-            {selectedApproval?.id === approval.id && (
-              <ApprovalDetail approval={approval} />
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Onay Detay Popup */}
       {selectedApproval && (

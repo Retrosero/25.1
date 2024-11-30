@@ -79,20 +79,17 @@ export function ReceiptPreview({ data, onClose, onPrint }: ReceiptPreviewProps) 
                 <tr key={index} className="border-b border-gray-200 dark:border-gray-700">
                   <td className="py-2 capitalize">{payment.type}</td>
                   <td className="py-2">
-                    {payment.type === 'cek' && (
+                    {payment.data.dueDate && (
                       <span>
-                        {payment.data.bank} - {payment.data.checkNumber} - 
-                        Vade: {new Date(payment.data.dueDate).toLocaleDateString('tr-TR')}
+                        Vade: {new Date(payment.data.dueDate).toLocaleDateString('tr-TR')} - 
+                        {payment.type === 'cek' ? (
+                          `${payment.data.bank} - ${payment.data.checkNumber}`
+                        ) : payment.type === 'senet' ? (
+                          `${payment.data.debtorName} - ${payment.data.bondNumber}`
+                        ) : payment.type === 'krediKarti' ? (
+                          payment.data.bank
+                        ) : ''}
                       </span>
-                    )}
-                    {payment.type === 'senet' && (
-                      <span>
-                        {payment.data.debtorName} - {payment.data.bondNumber} - 
-                        Vade: {new Date(payment.data.dueDate).toLocaleDateString('tr-TR')}
-                      </span>
-                    )}
-                    {payment.type === 'krediKarti' && (
-                      <span>{payment.data.bank}</span>
                     )}
                   </td>
                   <td className="text-right">{formatCurrency(Number(payment.data.amount))}</td>

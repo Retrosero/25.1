@@ -206,14 +206,6 @@ export function PaymentRow({ type, onDelete, onChange, data }: PaymentRowProps) 
               />
               <input
                 type="date"
-                value={data.issueDate}
-                onChange={(e) => handleChange('issueDate', e.target.value)}
-                placeholder="Düzenleme Tarihi"
-                className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                required
-              />
-              <input
-                type="date"
                 value={data.dueDate}
                 onChange={(e) => handleChange('dueDate', e.target.value)}
                 placeholder="Vade Tarihi"

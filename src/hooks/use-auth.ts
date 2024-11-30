@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useUsers } from './use-users';
 
 type AuthState = {
   isAuthenticated: boolean;
@@ -7,7 +8,7 @@ type AuthState = {
     id: string;
     name: string;
     email: string;
-    series?: string;
+    role?: string;
   } | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -20,15 +21,23 @@ export const useAuth = create<AuthState>()(
       isAuthenticated: false,
       user: null,
       login: async (email: string, password: string) => {
-        // TODO: Implement actual login logic
-        set({
-          isAuthenticated: true,
-          user: {
-            id: '1',
-            name: 'Demo Kullanıcı',
-            email,
-          },
-        });
+        const { users } = useUsers.getState();
+        const user = users.find(u => u.email === email && u.password === password);
+
+        if (user && user.active) {
+          set({
+            isAuthenticated: true,
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              permissions: user.permissions,
+            },
+          });
+        } else {
+          throw new Error('Invalid credentials');
+        }
       },
       logout: () => {
         set({ isAuthenticated: false, user: null });

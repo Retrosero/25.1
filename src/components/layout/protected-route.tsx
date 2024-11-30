@@ -8,18 +8,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, permission }: ProtectedRouteProps) {
-  const { isAuthenticated, currentUser, hasAccess } = useAuthGuard(permission);
+  const { isAuthenticated, hasAccess } = useAuthGuard(permission);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
 
-  // Admin always has access
-  if (currentUser?.role === 'admin') {
-    return <>{children}</>;
-  }
-
-  // Check permission if specified
   if (permission && !hasAccess) {
     return <Navigate to="/unauthorized" />;
   }

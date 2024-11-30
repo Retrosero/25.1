@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
+  ListTodo,
+  Calendar,
   ShoppingCart, 
   Package,
   Wallet,
@@ -19,7 +21,8 @@ import {
   User,
   LogOut,
   UserCircle,
-  UserCog
+  UserCog,
+  Truck
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useApprovals } from '../../hooks/use-approvals';
@@ -27,6 +30,21 @@ import { useOrders } from '../../hooks/use-orders';
 import { useInventoryCount } from '../../hooks/use-inventory-count';
 import { useAuth } from '../../hooks/use-auth';
 import { useUsers } from '../../hooks/use-users';
+
+interface MenuItem {
+  id: string;
+  icon: any;
+  label: string;
+  path: string;
+  count?: number;
+  permission?: string;
+  subItems?: Array<{
+    label: string;
+    path: string;
+    count?: number;
+    permission?: string;
+  }>;
+}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -48,31 +66,23 @@ export function Sidebar({ isOpen, onOpenChange }: SidebarProps) {
   const pendingApprovalsCount = approvals.filter(a => a.status === 'pending').length;
   const orderCounts = getStatusCounts();
   const pendingListsCount = getCounts().filter(list => list.status === 'in-progress').length;
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const menuItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { id: 'customers', icon: Users, label: 'Müşteriler', path: '/customers' },
-    { id: 'sales', icon: ShoppingCart, label: 'Satış', path: '/sales' },
-    { id: 'products', icon: Package, label: 'Ürünler', path: '/products' },
-    { id: 'payments', icon: Wallet, label: 'Tahsilat', path: '/payments' },
-    { id: 'returns', icon: RefreshCcw, label: 'İadeler', path: '/returns' },
-    { id: 'daily-report', icon: FileText, label: 'Gün Sonu', path: '/daily-report' },
+  
+  const menuItems: MenuItem[] = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', permission: 'dashboard.view' },
+    { id: 'customers', icon: Users, label: 'Müşteriler', path: '/customers', permission: 'customers.view' },
+    { id: 'sales', icon: ShoppingCart, label: 'Satış', path: '/sales', permission: 'sales.create' },
+    { id: 'calendar', icon: Calendar, label: 'Takvim', path: '/calendar', permission: 'calendar.view' },
+    { id: 'todos', icon: ListTodo, label: 'Görevler', path: '/todos', permission: 'todos.view' },
+    { id: 'products', icon: Package, label: 'Ürünler', path: '/products', permission: 'products.view' },
+    { id: 'payments', icon: Wallet, label: 'Tahsilat', path: '/payments', permission: 'payments.create' },
+    { id: 'returns', icon: RefreshCcw, label: 'İadeler', path: '/returns', permission: 'returns.create' },
+    { id: 'daily-report', icon: FileText, label: 'Gün Sonu', path: '/daily-report', permission: 'reports.view' },
     { 
       id: 'approvals', 
       icon: AlertCircle, 
       label: 'Onay Bekleyenler', 
       path: '/approvals',
+      permission: 'approvals.view',
       count: pendingApprovalsCount 
     },
     { 
@@ -80,6 +90,7 @@ export function Sidebar({ isOpen, onOpenChange }: SidebarProps) {
       icon: PackageCheck, 
       label: 'Siparişler', 
       path: '/orders',
+      permission: 'orders.view',
       count: orderCounts.preparing + orderCounts.checking + orderCounts.loading + orderCounts.ready,
       subItems: [
         { label: 'Hazırlanacak', path: '/orders?status=preparing', count: orderCounts.preparing },
@@ -94,6 +105,7 @@ export function Sidebar({ isOpen, onOpenChange }: SidebarProps) {
       icon: MapPin,
       label: 'Teslimat',
       path: '/delivery',
+      permission: 'orders.deliver',
       subItems: [
         { label: 'Teslimat Sırası', path: '/orders/route' },
         { label: 'Teslimat', path: '/orders/delivery' },
@@ -105,6 +117,7 @@ export function Sidebar({ isOpen, onOpenChange }: SidebarProps) {
       icon: ClipboardList, 
       label: 'Sayım', 
       path: '/inventory',
+      permission: 'inventory.view',
       count: pendingListsCount,
       subItems: [
         { label: 'Sayım Yap', path: '/inventory/count' },
@@ -112,9 +125,34 @@ export function Sidebar({ isOpen, onOpenChange }: SidebarProps) {
         { label: 'Tamamlananlar', path: '/inventory/completed' }
       ]
     },
-    { id: 'users', icon: UserCog, label: 'Kullanıcı Yönetimi', path: '/users' },
-    { id: 'settings', icon: Settings, label: 'Ayarlar', path: '/settings' },
+    { id: 'users', icon: UserCog, label: 'Kullanıcı Yönetimi', path: '/users', permission: 'users.manage' },
+    { id: 'settings', icon: Settings, label: 'Ayarlar', path: '/settings', permission: 'settings.view' },
+    { id: 'cargo', icon: Truck, label: 'Kargo Teslim', path: '/cargo-delivery' }
   ];
+
+  // Filter menu items based on permissions
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    
+    // Check specific permission if defined
+    if (item.permission) {
+      return hasPermission(user.id, item.permission);
+    }
+    
+    return true; // Show items without specific permissions
+  });
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems(prev =>
@@ -150,7 +188,7 @@ export function Sidebar({ isOpen, onOpenChange }: SidebarProps) {
         {/* Main Navigation - Scrollable Area */}
         <nav className="flex-1 overflow-y-auto h-[calc(100%-5rem)]">
           <ul className="space-y-1 p-4">
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path || 
                 (item.subItems && item.subItems.some(sub => location.pathname + location.search === sub.path));

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AccessRequest } from '../types/user';
 import { useNotifications } from './use-notifications';
+import { useUsers } from './use-users';
 
 interface AccessRequestsState {
   requests: AccessRequest[];
@@ -42,8 +43,17 @@ export const useAccessRequests = create<AccessRequestsState>()(
       updateRequestStatus: (id, status, respondedBy) => {
         const { addNotification } = useNotifications.getState();
         const request = get().requests.find(r => r.id === id);
+        const { updateUserPermissions } = useUsers.getState();
 
         if (request) {
+          // When approving, grant the requested permission
+          if (status === 'approved') {
+            updateUserPermissions(request.userId, [{
+              id: request.permissionId,
+              allowed: true
+            }]);
+          }
+
           addNotification({
             type: 'access_request',
             title: 'Erişim Talebi Güncellendi',

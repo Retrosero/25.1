@@ -1,15 +1,33 @@
 import { X, Bell, Check } from 'lucide-react';
 import { useNotifications } from '../../hooks/use-notifications';
+import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
+
+import { useAuth } from '../../hooks/use-auth';
 
 interface NotificationsPopupProps {
   onClose: () => void;
 }
 
 export function NotificationsPopup({ onClose }: NotificationsPopupProps) {
+  const navigate = useNavigate();
   const { notifications, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { user } = useAuth();
+
+  // Filter notifications to only show relevant ones for the current user
+  const userNotifications = notifications.filter(notification => 
+    !notification.userId || notification.userId === user?.id
+  );
+
+  const handleNotificationClick = (notification: any) => {
+    if (notification.data?.todoId) {
+      navigate('/todos');
+      markAsRead(notification.id);
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-end p-4 z-50">
@@ -36,18 +54,20 @@ export function NotificationsPopup({ onClose }: NotificationsPopupProps) {
         </div>
 
         <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
-          {notifications.length === 0 ? (
+          {userNotifications.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
               Bildirim bulunmuyor
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {notifications.map((notification) => (
+              {userNotifications.map((notification) => (
                 <div
                   key={notification.id}
+                  onClick={() => handleNotificationClick(notification)}
                   className={cn(
                     "p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50",
-                    !notification.read && "bg-primary-50 dark:bg-primary-900/20"
+                    !notification.read && "bg-primary-50 dark:bg-primary-900/20",
+                    notification.data?.todoId && "cursor-pointer"
                   )}
                 >
                   <div className="flex items-start justify-between">

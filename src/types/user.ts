@@ -4,7 +4,7 @@ export type Permission = {
   id: string;
   name: string;
   description: string;
-  module: 'sales' | 'inventory' | 'customers' | 'orders' | 'payments' | 'approvals' | 'reports' | 'settings';
+  module: 'sales' | 'inventory' | 'customers' | 'orders' | 'payments' | 'approvals' | 'reports' | 'settings' | 'calendar';
 };
 
 export type UserPermission = {
@@ -48,5 +48,6 @@ export type Notification = {
   message: string;
   date: string;
   read: boolean;
+  userId?: string;
   data?: any;
 };

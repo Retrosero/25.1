@@ -119,16 +119,14 @@ export function PaymentsPage() {
         description: selectedTab === 'tahsilat' ? 'Tahsilat' : 'Tediye',
         customer: receipt.customer,
         amount: selectedTab === 'tahsilat' ? total : -total,
-        paymentMethod: payments.map(p => {
-          switch (p.type) {
-            case 'nakit': return 'Nakit';
-            case 'krediKarti': return `Kredi Kartı (${p.data.bank})`;
-            case 'cek': return `Çek (${p.data.bank} - ${p.data.checkNumber})`;
-            case 'senet': return `Senet (${p.data.bondNumber})`;
-            case 'havale': return `Havale (${p.data.bank})`;
-            default: return p.type;
-          }
-        }).join(', '),
+        paymentMethod: {
+          type: payments[0].type,
+          details: payments[0].data.bank || payments[0].data.debtorName,
+          dueDate: payments[0].type === 'cek' || payments[0].type === 'senet' ? 
+            payments[0].data.dueDate : undefined
+        },
+        dueDate: payments[0].type === 'cek' || payments[0].type === 'senet' ? 
+          payments[0].data.dueDate : undefined,
         note,
         date: new Date().toISOString(),
       });

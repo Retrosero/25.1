@@ -1,27 +1,33 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, UserRole, UserPermission } from '../types/user';
+import { User, UserRole, Permission, UserPermission } from '../types/user';
 import { permissions } from '../data/permissions';
+
+type RolePermissions = {
+  role: UserRole;
+  permissions: UserPermission[];
+};
 
 interface UsersState {
   users: User[];
+  rolePermissions: RolePermissions[];
+  defaultRolePermissions: Record<UserRole, UserPermission[]>;
   addUser: (user: Omit<User, 'id' | 'createdAt'>) => void;
   updateUser: (id: string, updates: Partial<User>) => void;
   deleteUser: (id: string) => void;
-  getUserById: (id: string) => User | undefined;
-  getUsersByRole: (role: UserRole) => User[];
-  updateUserPermissions: (userId: string, permissions: UserPermission[]) => void;
   hasPermission: (userId: string, permissionId: string) => boolean;
+  updateUserPermissions: (userId: string, permissions: UserPermission[]) => void;
+  updateRolePermissions: (role: UserRole, permissions: UserPermission[]) => void;
+  getRolePermissions: (role: UserRole) => UserPermission[];
   grantFullPermissions: () => void;
 }
 
-// Create initial admin user with all permissions
-const adminUser: User = {
+const adminUser = {
   id: 'admin',
   name: 'Admin',
   email: 'admin@example.com',
   password: 'admin123',
-  role: 'admin',
+  role: 'admin' as UserRole,
   active: true,
   permissions: permissions.map(p => ({ id: p.id, allowed: true })),
   createdAt: new Date().toISOString(),
@@ -30,18 +36,31 @@ const adminUser: User = {
 export const useUsers = create<UsersState>()(
   persist(
     (set, get) => ({
-      users: [adminUser],
+      users: [{
+        ...adminUser,
+        permissions: permissions.map(p => ({ id: p.id, allowed: true })),
+      }],
+      rolePermissions: [],
+      defaultRolePermissions: {
+        admin: permissions.map(p => ({ id: p.id, allowed: true })),
+        supervisor: permissions.map(p => ({ id: p.id, allowed: false })),
+        manager: permissions.map(p => ({ id: p.id, allowed: false })),
+        sales: permissions.map(p => ({ id: p.id, allowed: false })),
+        warehouse: permissions.map(p => ({ id: p.id, allowed: false })),
+        accounting: permissions.map(p => ({ id: p.id, allowed: false })),
+      },
 
       addUser: (user) => {
+        const defaultPerms = get().defaultRolePermissions[user.role];
         const newUser: User = {
           ...user,
           id: `USER${Math.random().toString(36).substr(2, 9)}`,
           createdAt: new Date().toISOString(),
-          permissions: permissions.map(p => ({ id: p.id, allowed: true })),
+          permissions: defaultPerms || [],
         };
 
         set(state => ({
-          users: [...state.users, newUser]
+          users: [...state.users, newUser],
         }));
       },
 
@@ -49,59 +68,104 @@ export const useUsers = create<UsersState>()(
         set(state => ({
           users: state.users.map(user =>
             user.id === id ? { ...user, ...updates } : user
-          )
+          ),
         }));
       },
 
       deleteUser: (id) => {
         set(state => ({
-          users: state.users.filter(user => user.id !== id)
-        }));
-      },
-
-      getUserById: (id) => {
-        return get().users.find(user => user.id === id);
-      },
-
-      getUsersByRole: (role) => {
-        return get().users.filter(user => user.role === role);
-      },
-
-      updateUserPermissions: (userId, newPermissions) => {
-        set(state => ({
-          users: state.users.map(user =>
-            user.id === userId
-              ? { ...user, permissions: newPermissions }
-              : user
-          )
+          users: state.users.filter(user => user.id !== id),
         }));
       },
 
       hasPermission: (userId, permissionId) => {
         const user = get().users.find(u => u.id === userId);
         if (!user) return false;
-        
-        // Admin always has access
+
+        // Admin has all permissions
         if (user.role === 'admin') return true;
         
-        // All users have basic access if no specific permission is required
-        if (!permissionId) return true;
+        // First check user-specific permissions
+        const userPermission = user.permissions.find(p => p.id === permissionId);
+        if (userPermission) {
+          return userPermission.allowed;
+        }
         
-        const permission = user.permissions.find(p => p.id === permissionId);
-        return permission?.allowed || false;
+        // Then check role permissions
+        const rolePerms = get().rolePermissions.find(rp => rp.role === user.role);
+        if (rolePerms) {
+          const rolePermission = rolePerms.permissions.find(p => p.id === permissionId);
+          if (rolePermission) {
+            return rolePermission.allowed;
+          }
+        }
+
+        return false;
+      },
+
+      updateUserPermissions: (userId, newPermissions) => {
+        set(state => ({
+          users: state.users.map(user =>
+            user.id === userId
+              ? { 
+                  ...user, 
+                  permissions: [
+                    ...user.permissions.filter(p => !newPermissions.find(np => np.id === p.id)),
+                    ...newPermissions
+                  ]
+                }
+              : user
+          ),
+        }));
+      },
+
+      updateRolePermissions: (role, permissions) => {
+        set(state => ({
+          rolePermissions: [
+            ...state.rolePermissions.filter(rp => rp.role !== role),
+            { role, permissions }
+          ],
+        }));
+      },
+
+      getRolePermissions: (role) => {
+        const rolePerms = get().rolePermissions.find(rp => rp.role === role);
+        if (rolePerms) return rolePerms.permissions;
+        return get().defaultRolePermissions[role] || [];
       },
 
       grantFullPermissions: () => {
+        const allPermissions = permissions.map(p => ({
+          id: p.id,
+          allowed: true,
+        }));
+
         set(state => ({
-          users: state.users.map(user => ({
-            ...user,
-            permissions: permissions.map(p => ({ id: p.id, allowed: true }))
-          }))
+          defaultRolePermissions: {
+            ...state.defaultRolePermissions,
+            admin: allPermissions,
+          },
         }));
       },
     }),
     {
       name: 'users-storage',
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          // Migration from version 0 to 1
+          return {
+            ...persistedState,
+            users: persistedState.users.map((user: User) => ({
+              ...user,
+              permissions: user.role === 'admin' 
+                ? permissions.map(p => ({ id: p.id, allowed: true }))
+                : permissions.map(p => ({ id: p.id, allowed: false }))
+            }))
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );

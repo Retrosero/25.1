@@ -22,202 +22,166 @@ import { OrderRoutePage } from '../pages/orders/route';
 import { OrderDeliveryPage } from '../pages/orders/delivery';
 import { CompletedDeliveriesPage } from '../pages/orders/completed-deliveries';
 import { UsersPage } from '../pages/users';
+import { TodosPage } from '../pages/todos';
+import { CalendarPage } from '../pages/calendar';
 import { NotificationsPage } from '../pages/notifications';
+import { CargoDeliveryPage } from '../pages/cargo-delivery/cargo-delivery';
+import { CargoDeliverySettingsPage } from '../pages/cargo-delivery/settings';
 import { ProtectedRoute } from '../components/layout/protected-route';
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Login ve Yetkilendirme Sayfaları */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-      {/* Ana Layout ile Sarılmış Rotalar */}
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        
+        <Route path="/dashboard" element={
+          <ProtectedRoute permission="dashboard.view">
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/users" element={
+          <ProtectedRoute permission="users.manage">
+            <UsersPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute>
-              <UsersPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/todos" element={
+          <ProtectedRoute permission="todos.view">
+            <TodosPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/notifications"
-          element={
-            <ProtectedRoute>
-              <NotificationsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/calendar" element={
+          <ProtectedRoute permission="calendar.view">
+            <CalendarPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/customers"
-          element={
-            <ProtectedRoute>
-              <CustomersPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/notifications" element={
+          <ProtectedRoute permission="notifications.view">
+            <NotificationsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/customers/:id"
-          element={
-            <ProtectedRoute>
-              <CustomerDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/cargo-delivery" element={
+          <ProtectedRoute>
+            <CargoDeliveryPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/cargo-delivery/settings" element={
+          <ProtectedRoute>
+            <CargoDeliverySettingsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/sales"
-          element={
-            <ProtectedRoute>
-              <SalesPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/customers" element={
+          <ProtectedRoute permission="customers.view">
+            <CustomersPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/payments"
-          element={
-            <ProtectedRoute>
-              <PaymentsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/customers/:id" element={
+          <ProtectedRoute permission="customers.view">
+            <CustomerDetailPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/daily-report"
-          element={
-            <ProtectedRoute>
-              <DailyReportPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/sales" element={
+          <ProtectedRoute permission="sales.create">
+            <SalesPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/payments" element={
+          <ProtectedRoute permission="payments.create">
+            <PaymentsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/products"
-          element={
-            <ProtectedRoute>
-              <ProductsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/daily-report" element={
+          <ProtectedRoute permission="reports.view">
+            <DailyReportPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/approvals"
-          element={
-            <ProtectedRoute>
-              <ApprovalsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/settings" element={
+          <ProtectedRoute permission="settings.view">
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/returns"
-          element={
-            <ProtectedRoute>
-              <ReturnsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/products" element={
+          <ProtectedRoute permission="products.view">
+            <ProductsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/inventory/count"
-          element={
-            <ProtectedRoute>
-              <InventoryCountPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/approvals" element={
+          <ProtectedRoute permission="approvals.view">
+            <ApprovalsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/inventory/lists"
-          element={
-            <ProtectedRoute>
-              <InventoryListsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/returns" element={
+          <ProtectedRoute permission="returns.create">
+            <ReturnsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/inventory/completed"
-          element={
-            <ProtectedRoute>
-              <CompletedInventoryPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/inventory/count" element={
+          <ProtectedRoute permission="inventory.count">
+            <InventoryCountPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <OrdersPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/inventory/lists" element={
+          <ProtectedRoute permission="inventory.view">
+            <InventoryListsPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/orders/preparation/:id"
-          element={
-            <ProtectedRoute>
-              <OrderPreparationPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/inventory/completed" element={
+          <ProtectedRoute permission="inventory.view">
+            <CompletedInventoryPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/orders/route"
-          element={
-            <ProtectedRoute>
-              <OrderRoutePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/orders" element={
+          <ProtectedRoute permission="orders.view">
+            <OrdersPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/orders/delivery"
-          element={
-            <ProtectedRoute>
-              <OrderDeliveryPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/orders/preparation/:id" element={
+          <ProtectedRoute permission="orders.prepare">
+            <OrderPreparationPage />
+          </ProtectedRoute>
+        } />
 
-        <Route
-          path="/orders/completed-deliveries"
-          element={
-            <ProtectedRoute>
-              <CompletedDeliveriesPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/orders/route" element={
+          <ProtectedRoute permission="orders.deliver">
+            <OrderRoutePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/orders/delivery" element={
+          <ProtectedRoute permission="orders.deliver">
+            <OrderDeliveryPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/orders/completed-deliveries" element={
+          <ProtectedRoute permission="orders.view">
+            <CompletedDeliveriesPage />
+          </ProtectedRoute>
+        } />
       </Route>
 
-      {/* Hatalı Rotayı Yönlendirme */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

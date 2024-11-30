@@ -9,6 +9,7 @@ export type Transaction = {
   id: string;
   transactionId?: string; // For linking with orders
   date: string;
+  dueDate?: string; // For future payments
   type: TransactionType;
   description: string;
   customer: {
@@ -26,7 +27,11 @@ export type Transaction = {
     price: number;
     note?: string;
   }>;
-  paymentMethod?: string;
+  paymentMethod?: {
+    type: 'nakit' | 'cek' | 'senet' | 'havale' | 'krediKarti';
+    details?: string;
+    dueDate?: string;
+  };
   note?: string;
   discount?: number;
   year?: number;

@@ -7,6 +7,7 @@ import { useOrders } from '../hooks/use-orders';
 import { formatCurrency } from '../lib/utils';
 import { cn } from '../lib/utils';
 import { ExportMenu } from '../components/export-menu';
+import { CustomizableTable } from '../components/ui/customizable-table';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -24,11 +25,37 @@ export function CustomerDetailPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [tableColumns, setTableColumns] = useState(() => {
+    const savedColumns = localStorage.getItem('customerTransactionsColumns');
+    return savedColumns ? JSON.parse(savedColumns) : [
+    { id: 'date', label: 'Tarih', visible: true, order: 0 },
+    { id: 'dueDate', label: 'Vade Tarihi', visible: true, order: 1 },
+    { id: 'type', label: 'İşlem', visible: true, order: 2 },
+    { id: 'series', label: 'Seri', visible: true, order: 3 },
+    { id: 'sequence', label: 'Sıra', visible: true, order: 4 },
+    { id: 'description', label: 'Açıklama', visible: true, order: 5 },
+    { id: 'amount', label: 'Tutar', visible: true, order: 6 },
+    { id: 'balance', label: 'Bakiye', visible: true, order: 7 }
+    ];
+  });
 
   const customer = customers.find(c => c.id === id);
   if (!customer) return null;
 
   const customerTransactions = getCustomerTransactions(customer.id, selectedYear);
+  const formattedTransactions = customerTransactions.map(transaction => ({
+    date: new Date(transaction.date).toLocaleDateString('tr-TR'),
+    dueDate: transaction.dueDate ? new Date(transaction.dueDate).toLocaleDateString('tr-TR') : '-',
+    type: transaction.type === 'sale' ? 'Satış' :
+          transaction.type === 'payment' ? 'Tahsilat' :
+          transaction.type === 'return' ? 'İade' : 'Tediye',
+    series: transaction.series || '-',
+    sequence: transaction.sequence,
+    description: transaction.description,
+    amount: formatCurrency(Math.abs(transaction.amount)),
+    balance: formatCurrency(transaction.amount),
+    originalTransaction: transaction // Orijinal işlem verilerini sakla
+  }));
   const customerOrders = getOrdersByCustomer(customer.id);
   const balance = getCustomerBalance(customer.id);
   const stats = getCustomerStats(customer.id);
@@ -225,41 +252,13 @@ export function CustomerDetailPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto" id="transactions-table">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left p-4">Tarih</th>
-                    <th className="text-left p-4">İşlem</th>
-                    <th className="text-left p-4">Seri</th>
-                    <th className="text-left p-4">Sıra</th>
-                    <th className="text-left p-4">Açıklama</th>
-                    <th className="text-right p-4">Tutar</th>
-                    <th className="text-right p-4">Bakiye</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customerTransactions.map((transaction) => (
-                    <tr 
-                      key={transaction.id}
-                      onClick={() => setSelectedTransaction(transaction)}
-                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                    >
-                      <td className="p-4">{new Date(transaction.date).toLocaleDateString('tr-TR')}</td>
-                      <td className="p-4">
-                        {transaction.type === 'sale' ? 'Satış' :
-                         transaction.type === 'payment' ? 'Tahsilat' :
-                         transaction.type === 'return' ? 'İade' : 'Tediye'}
-                      </td>
-                      <td className="p-4">{transaction.series || '-'}</td>
-                      <td className="p-4">{transaction.sequence}</td>
-                      <td className="p-4">{transaction.description}</td>
-                      <td className="p-4 text-right">{formatCurrency(Math.abs(transaction.amount))}</td>
-                      <td className="p-4 text-right">{formatCurrency(transaction.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div id="transactions-table">
+              <CustomizableTable
+                columns={tableColumns}
+                data={formattedTransactions}
+                onRowClick={(row) => setSelectedTransaction(row.originalTransaction)}
+                onColumnSettingsChange={setTableColumns}
+              />
             </div>
           </div>
         )}

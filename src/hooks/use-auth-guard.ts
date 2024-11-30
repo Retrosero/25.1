@@ -8,19 +8,39 @@ export function useAuthGuard(requiredPermission?: string) {
   const { user: currentUser, isAuthenticated } = useAuth();
   const { hasPermission } = useUsers();
 
+  const checkAccess = () => {
+    if (!currentUser || !isAuthenticated) {
+      return false;
+    }
+
+    // Admin always has access
+    if (currentUser.role === 'admin') { 
+      return true;
+    }
+
+    // If no specific permission required, allow access
+    if (!requiredPermission) {
+      return true;
+    }
+
+    // Check if user has the required permission
+    const hasAccess = hasPermission(currentUser.id, requiredPermission);
+    return hasAccess;
+  };
+
   useEffect(() => {
+    const access = checkAccess();
+
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
 
-    if (requiredPermission && currentUser) {
-      const hasAccess = hasPermission(currentUser.id, requiredPermission);
-      if (!hasAccess) {
-        navigate('/unauthorized');
-      }
+    if (!access) {
+      navigate('/unauthorized');
+      return;
     }
-  }, [isAuthenticated, currentUser, requiredPermission, navigate, hasPermission]);
+  }, [isAuthenticated, navigate, currentUser, requiredPermission]);
 
-  return { isAuthenticated, currentUser };
+  return { isAuthenticated, currentUser, hasAccess: checkAccess() };
 }

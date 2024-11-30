@@ -6,6 +6,7 @@ type ViewMode = 'grid' | 'list' | 'list-no-image';
 type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'stock-asc' | 'stock-desc';
 type DashboardLayout = 'metrics' | 'cards';
 type InventoryViewMode = 'grid' | 'list';
+type ApprovalDetailView = 'expanded' | 'collapsed';
 
 type ProductCardField = {
   id: string;
@@ -38,6 +39,7 @@ interface SettingsState {
   dashboardMetrics: DashboardVisibility;
   approvalSettings: ApprovalSettings;
   inventoryViewMode: InventoryViewMode;
+  approvalDetailView: ApprovalDetailView;
   productCardFields: ProductCardField[];
   setNavigationType: (type: NavigationType) => void;
   setDefaultViewMode: (mode: ViewMode) => void;
@@ -49,6 +51,7 @@ interface SettingsState {
   setDashboardMetrics: (metrics: DashboardVisibility) => void;
   setApprovalSettings: (settings: Partial<ApprovalSettings>) => void;
   setInventoryViewMode: (mode: InventoryViewMode) => void;
+  setApprovalDetailView: (view: ApprovalDetailView) => void;
   updateProductCardField: (id: string, updates: Partial<ProductCardField>) => void;
   reorderProductCardFields: (fields: ProductCardField[]) => void;
 }

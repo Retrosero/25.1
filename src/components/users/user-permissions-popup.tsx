@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { User } from '../../types/user';
+import { User, UserRole } from '../../types/user';
 import { permissions } from '../../data/permissions';
 import { useUsers } from '../../hooks/use-users';
 
@@ -10,8 +10,10 @@ interface UserPermissionsPopupProps {
 }
 
 export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProps) {
-  const { updateUserPermissions } = useUsers();
+  const { updateUserPermissions, updateRolePermissions } = useUsers();
   const [userPermissions, setUserPermissions] = useState(user.permissions);
+  const [applyToRole, setApplyToRole] = useState(false);
+  const [showRoleDefaults, setShowRoleDefaults] = useState(false);
 
   // Modüllere göre izinleri grupla
   const groupedPermissions = permissions.reduce((acc, permission) => {
@@ -30,9 +32,33 @@ export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProp
   };
 
   const handleSave = () => {
-    updateUserPermissions(user.id, userPermissions);
+    if (!user) return;
+    if (applyToRole) {
+      // Update role permissions
+      const rolePerms = userPermissions.map(p => ({
+        id: p.id,
+        allowed: p.allowed
+      }));
+      updateRolePermissions(user.role, rolePerms);
+    } else {
+      // Update user-specific permissions
+      const userPerms = userPermissions.map(p => ({
+        id: p.id,
+        allowed: p.allowed
+      }));
+      updateUserPermissions(user.id, userPerms);
+    }
     onClose();
   };
+
+  useEffect(() => {
+    const savedPermissions = localStorage.getItem(`user_permissions_${user.id}`);
+    if (savedPermissions) {
+      setUserPermissions(JSON.parse(savedPermissions));
+    } else {
+      setUserPermissions(user.permissions);
+    }
+  }, [user.id]);
 
   const moduleLabels: Record<string, string> = {
     sales: 'Satış',
@@ -62,6 +88,29 @@ export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProp
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
+          {user.role !== 'admin' && (
+            <div className="mb-4 space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={applyToRole}
+                  onChange={(e) => setApplyToRole(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span>Bu izinleri tüm {user.role} rolündeki kullanıcılara uygula</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showRoleDefaults}
+                  onChange={(e) => setShowRoleDefaults(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span>Rol varsayılan izinlerini göster</span>
+              </label>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {Object.entries(groupedPermissions).map(([module, modulePermissions]) => (
               <div
@@ -79,11 +128,16 @@ export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProp
                           checked={currentPermission?.allowed || false}
                           onChange={(e) => handlePermissionChange(permission.id, e.target.checked)}
                           className="mt-1 w-4 h-4 rounded border-gray-300"
-                          disabled={user.role === 'admin'} // Admin'in izinleri değiştirilemez
+                          disabled={user.role === 'admin' || showRoleDefaults}
                         />
                         <div>
                           <p className="font-medium">{permission.name}</p>
                           <p className="text-sm text-gray-500">{permission.description}</p>
+                          {showRoleDefaults && (
+                            <p className="text-xs text-primary-600">
+                              Varsayılan: {currentPermission?.allowed ? 'İzin Var' : 'İzin Yok'}
+                            </p>
+                          )}
                         </div>
                       </label>
                     );
