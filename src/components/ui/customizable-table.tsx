@@ -24,6 +24,22 @@ export function CustomizableTable({ columns: initialColumns, data, onRowClick, o
   const [showColumnSettings, setShowColumnSettings] = useState(false);
 
   useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const filterButton = document.getElementById('filter-button');
+      const filterMenu = document.getElementById('filter-menu');
+      
+      if (filterButton && filterMenu && 
+          !filterButton.contains(event.target as Node) && 
+          !filterMenu.contains(event.target as Node)) {
+        setShowColumnSettings(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     const tableId = 'customerTransactions';
     localStorage.setItem(`tableColumns_${tableId}`, JSON.stringify(columns));
     onColumnSettingsChange(columns);
@@ -59,23 +75,27 @@ export function CustomizableTable({ columns: initialColumns, data, onRowClick, o
 
   return (
     <div className="relative">
-      <div className="flex justify-end mb-4">
-        <div className="relative">
+      <div className="absolute right-4 top-4 z-10">
         <button
+          id="filter-button"
           onClick={() => setShowColumnSettings(!showColumnSettings)}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700",
-            showColumnSettings && "bg-gray-100 dark:bg-gray-700"
+            "w-8 h-8 flex items-center justify-center rounded-full",
+            "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600",
+            "transition-colors duration-200",
+            showColumnSettings && "bg-primary-100 dark:bg-primary-900"
           )}
+          title="Sütunları Düzenle"
         >
-          <Filter className="w-4 h-4" />
-          <span>Sütunlar</span>
+          <Filter className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
-        </div>
       </div>
 
       {showColumnSettings && (
-        <div className="absolute right-0 top-12 z-10 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div 
+          id="filter-menu"
+          className="absolute right-0 top-12 z-10 w-64 max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4"
+        >
           <h3 className="font-medium mb-4">Görünür Sütunlar</h3>
           <div className="space-y-2">
             {columns.map((column) => (

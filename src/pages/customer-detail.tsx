@@ -229,7 +229,7 @@ export function CustomerDetailPage() {
         {activeTab === 'transactions' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between">
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -239,7 +239,7 @@ export function CustomerDetailPage() {
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <ExportMenu onExport={handleExport} />
                   <button
                     onClick={handleWhatsAppShare}
@@ -250,15 +250,26 @@ export function CustomerDetailPage() {
                   </button>
                 </div>
               </div>
-            </div>
 
-            <div id="transactions-table">
-              <CustomizableTable
-                columns={tableColumns}
-                data={formattedTransactions}
-                onRowClick={(row) => setSelectedTransaction(row.originalTransaction)}
-                onColumnSettingsChange={setTableColumns}
-              />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Müşteri ara (isim, telefon veya vergi no)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 h-10 rounded-lg border border-gray-200 dark:border-gray-700"
+                />
+              </div>
+
+              <div id="transactions-table" className="mt-4">
+                <CustomizableTable
+                  columns={tableColumns}
+                  data={formattedTransactions}
+                  onRowClick={(row) => setSelectedTransaction(row.originalTransaction)}
+                  onColumnSettingsChange={setTableColumns}
+                />
+              </div>
             </div>
           </div>
         )}

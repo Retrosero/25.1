@@ -27,6 +27,7 @@ import {
 import { cn } from '../../lib/utils';
 import { useApprovals } from '../../hooks/use-approvals';
 import { useOrders } from '../../hooks/use-orders';
+import { useTodos } from '../../hooks/use-todos';
 import { useInventoryCount } from '../../hooks/use-inventory-count';
 import { useAuth } from '../../hooks/use-auth';
 import { useUsers } from '../../hooks/use-users';
@@ -60,19 +61,21 @@ export function Sidebar({ isOpen, onOpenChange }: SidebarProps) {
   const { user, logout } = useAuth();
   const { hasPermission } = useUsers();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { getTodosByUser } = useTodos();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const pendingApprovalsCount = approvals.filter(a => a.status === 'pending').length;
   const orderCounts = getStatusCounts();
   const pendingListsCount = getCounts().filter(list => list.status === 'in-progress').length;
+  const assignedTodos = user ? getTodosByUser(user.id).filter(todo => todo.status !== 'completed') : [];
   
   const menuItems: MenuItem[] = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', permission: 'dashboard.view' },
     { id: 'customers', icon: Users, label: 'Müşteriler', path: '/customers', permission: 'customers.view' },
     { id: 'sales', icon: ShoppingCart, label: 'Satış', path: '/sales', permission: 'sales.create' },
     { id: 'calendar', icon: Calendar, label: 'Takvim', path: '/calendar', permission: 'calendar.view' },
-    { id: 'todos', icon: ListTodo, label: 'Görevler', path: '/todos', permission: 'todos.view' },
+    { id: 'todos', icon: ListTodo, label: 'Görevler', path: '/todos', permission: 'todos.view', count: assignedTodos.length },
     { id: 'products', icon: Package, label: 'Ürünler', path: '/products', permission: 'products.view' },
     { id: 'payments', icon: Wallet, label: 'Tahsilat', path: '/payments', permission: 'payments.create' },
     { id: 'returns', icon: RefreshCcw, label: 'İadeler', path: '/returns', permission: 'returns.create' },

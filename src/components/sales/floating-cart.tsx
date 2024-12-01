@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/use-auth';
 import { useSettings } from '../../hooks/use-settings';
 import { useState } from 'react';
 import { NotePopup } from './note-popup';
+import { ProductNotePopup } from './product-note-popup';
 
 interface FloatingCartProps {
   onClose: () => void;
@@ -25,6 +26,7 @@ export function FloatingCart({ onClose }: FloatingCartProps) {
   const { user } = useAuth();
   const { approvalSettings } = useSettings();
   const [showOrderNotePopup, setShowOrderNotePopup] = useState(false);
+  const [editingItemNote, setEditingItemNote] = useState<{productId: string, note?: string} | null>(null);
 
   const { subtotal, discount: discountAmount, total } = getTotal();
 
@@ -93,8 +95,8 @@ export function FloatingCart({ onClose }: FloatingCartProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-bold">Sepet</h2>
           <button
@@ -105,7 +107,7 @@ export function FloatingCart({ onClose }: FloatingCartProps) {
           </button>
         </div>
 
-        <div className="p-4 max-h-[60vh] overflow-y-auto">
+        <div className="flex-1 p-4 overflow-y-auto">
           {cartItems.length === 0 ? (
             <p className="text-center text-gray-500 py-8">Sepetiniz boş</p>
           ) : (
@@ -131,6 +133,15 @@ export function FloatingCart({ onClose }: FloatingCartProps) {
                         {item.note && (
                           <p className="text-sm text-gray-500 mt-1">Not: {item.note}</p>
                         )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingItemNote({ productId: item.productId, note: item.note });
+                          }}
+                          className="text-sm text-primary-600 hover:text-primary-700 mt-1"
+                        >
+                          {item.note ? 'Notu Düzenle' : 'Not Ekle'}
+                        </button>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -223,6 +234,21 @@ export function FloatingCart({ onClose }: FloatingCartProps) {
           note={orderNote}
           onSave={setOrderNote}
           onClose={() => setShowOrderNotePopup(false)}
+        />
+      )}
+      
+      {editingItemNote && (
+        <ProductNotePopup
+          note={editingItemNote.note || ''}
+          onSave={(note) => {
+            const item = cartItems.find(item => item.productId === editingItemNote.productId);
+            if (item) {
+              const updatedItem = { ...item, note };
+              updateQuantity(item.productId, item.quantity, note);
+            }
+            setEditingItemNote(null);
+          }}
+          onClose={() => setEditingItemNote(null)}
         />
       )}
     </div>

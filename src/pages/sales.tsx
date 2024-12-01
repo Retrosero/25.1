@@ -57,32 +57,26 @@ export function SalesPage() {
       )}
 
       {/* Product Search and Controls */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap gap-2 mb-4">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Ürün ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 h-10 rounded-lg border border-gray-200 dark:border-gray-700"
+            className="w-full pl-10 pr-12 h-10 rounded-lg border border-gray-200 dark:border-gray-700"
           />
+          <button
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            title="Barkod Okuyucu"
+          >
+            <Barcode className="w-5 h-5" />
+          </button>
         </div>
-        <button
-          className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-          title="Barkod Okuyucu"
-        >
-          <Barcode className="w-5 h-5" />
-        </button>
-        <select
-          value={itemsPerPage}
-          onChange={(e) => setItemsPerPage(Number(e.target.value))}
-          className="h-10 rounded-lg border border-gray-200 dark:border-gray-700"
-        >
-          <option value={25}>25 Ürün</option>
-          <option value={50}>50 Ürün</option>
-          <option value={100}>100 Ürün</option>
-        </select>
+      </div>
+      
+      <div className="flex items-center gap-2 mb-4">
         <div className="flex gap-1">
           <button
             onClick={() => setViewMode('grid')}
@@ -112,6 +106,15 @@ export function SalesPage() {
             <Table className="w-5 h-5" />
           </button>
         </div>
+        <select
+          value={itemsPerPage}
+          onChange={(e) => setItemsPerPage(Number(e.target.value))}
+          className="w-16 h-10 rounded-lg border border-gray-200 dark:border-gray-700 text-center"
+        >
+          <option value={25}>25</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
         {selectedCustomer && (
           <button
             onClick={() => setShowCart(true)}

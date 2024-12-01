@@ -65,6 +65,12 @@ const defaultProductCardFields: ProductCardField[] = [
   { id: 'stock', label: 'Stok', enabled: true, order: 5 },
 ];
 
+const defaultDashboardOrder = [
+  'dashboard', 'customers', 'sales', 'calendar', 'todos', 
+  'products', 'payments', 'returns', 'daily-report', 'approvals',
+  'orders', 'delivery', 'inventory', 'users', 'settings', 'cargo'
+];
+
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
@@ -73,17 +79,7 @@ export const useSettings = create<SettingsState>()(
       defaultItemsPerPage: 25,
       defaultSortOption: 'name-asc',
       dashboardLayout: 'metrics',
-      dashboardOrder: [
-        'dashboard',
-        'customers',
-        'sales',
-        'products',
-        'payments',
-        'returns',
-        'daily-report',
-        'approvals',
-        'settings'
-      ],
+      dashboardOrder: defaultDashboardOrder,
       dashboardCards: {},
       dashboardMetrics: {},
       approvalSettings: {

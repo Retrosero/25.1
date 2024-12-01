@@ -2,7 +2,8 @@ import {
   BarChart3, Users, ShoppingCart, Wallet, 
   Package, CreditCard, FileText, AlertCircle,
   Settings, LayoutDashboard, RefreshCcw,
-  ClipboardList
+  ClipboardList, Calendar, ListTodo, MapPin,
+  PackageCheck, UserCog, Truck
 } from 'lucide-react';
 import { useSettings } from '../hooks/use-settings';
 import { useTransactions } from '../hooks/use-transactions';
@@ -17,13 +18,19 @@ const menuCards = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { id: 'customers', label: 'Müşteriler', icon: Users, path: '/customers' },
   { id: 'sales', label: 'Satış', icon: ShoppingCart, path: '/sales' },
+  { id: 'calendar', label: 'Takvim', icon: Calendar, path: '/calendar' },
+  { id: 'todos', label: 'Görevler', icon: ListTodo, path: '/todos' },
   { id: 'products', label: 'Ürünler', icon: Package, path: '/products' },
-  { id: 'payments', label: 'Tahsilat', icon: CreditCard, path: '/payments' },
+  { id: 'payments', label: 'Tahsilat', icon: Wallet, path: '/payments' },
   { id: 'returns', label: 'İadeler', icon: RefreshCcw, path: '/returns' },
   { id: 'daily-report', label: 'Gün Sonu', icon: FileText, path: '/daily-report' },
   { id: 'approvals', label: 'Onay Bekleyenler', icon: AlertCircle, path: '/approvals' },
+  { id: 'orders', label: 'Siparişler', icon: PackageCheck, path: '/orders' },
+  { id: 'delivery', label: 'Teslimat', icon: MapPin, path: '/delivery' },
   { id: 'inventory', label: 'Sayım', icon: ClipboardList, path: '/inventory/count' },
+  { id: 'users', label: 'Kullanıcı Yönetimi', icon: UserCog, path: '/users' },
   { id: 'settings', label: 'Ayarlar', icon: Settings, path: '/settings' },
+  { id: 'cargo', label: 'Kargo Teslim', icon: Truck, path: '/cargo-delivery' }
 ];
 
 export function DashboardPage() {
@@ -94,10 +101,8 @@ export function DashboardPage() {
   ];
 
   const orderedMenuCards = [...menuCards]
-    .filter(card => dashboardCards[card.id] !== false)
-    .sort((a, b) => {
-      return dashboardOrder.indexOf(a.id) - dashboardOrder.indexOf(b.id);
-    });
+    .filter(card => dashboardOrder.includes(card.id) && dashboardCards[card.id] !== false)
+    .sort((a, b) => dashboardOrder.indexOf(a.id) - dashboardOrder.indexOf(b.id));
 
   const visibleMetrics = metrics.filter(metric => dashboardMetrics[metric.id] !== false);
 

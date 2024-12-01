@@ -7,7 +7,9 @@ import { formatCurrency } from '../lib/utils';
 import { cn } from '../lib/utils';
 import { ApprovalDetail } from '../components/approvals/approval-detail';
 
-const tabs: { id: TabType; label: string }[] = [
+type TabType = 'all' | 'sales' | 'payments' | 'expenses' | 'returns' | 'products' | 'orders' | 'inventory' | 'access';
+
+const tabList: { id: TabType; label: string }[] = [
   { id: 'all', label: 'Tümü' },
   { id: 'sales', label: 'Satışlar' },
   { id: 'payments', label: 'Tahsilatlar' },
@@ -18,8 +20,6 @@ const tabs: { id: TabType; label: string }[] = [
   { id: 'inventory', label: 'Sayım' },
   { id: 'access', label: 'Erişim İstekleri' },
 ];
-
-type TabType = 'all' | 'sales' | 'payments' | 'expenses' | 'returns' | 'products' | 'orders' | 'inventory' | 'access';
 
 export function ApprovalsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('all');
@@ -32,7 +32,7 @@ export function ApprovalsPage() {
   const tabsRef = useRef<HTMLDivElement>(null);
 
   // Only show access tab for admin
-  const availableTabs = tabs.filter(tab => 
+  const availableTabs = tabList.filter(tab => 
     tab.id !== 'access' || user?.role === 'admin'
   );
 
@@ -85,26 +85,16 @@ export function ApprovalsPage() {
         <h1 className="text-2xl font-bold">Onay Bekleyenler</h1>
       </div>
 
-      <div className="flex items-center gap-2 mb-6 relative">
-        <button
-          onClick={() => handleScroll('left')}
-          className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm z-10"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
+      <div className="mb-6">
         <div 
-          ref={tabsRef}
-          className="flex-1 overflow-x-auto scrollbar-hide"
-          style={{ scrollBehavior: 'smooth' }}
-        >
-          <div className="flex gap-2 min-w-max px-2 py-1">
+          className="flex gap-2 overflow-x-auto scrollbar-hide pb-2"
+          style={{ scrollBehavior: 'smooth' }}>
             {availableTabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'px-4 py-2 rounded-lg relative whitespace-nowrap min-w-[120px]',
+                  'px-4 py-2 rounded-lg relative whitespace-nowrap z-0',
                   activeTab === tab.id
                     ? 'bg-primary-600 text-white'
                     : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
@@ -112,21 +102,13 @@ export function ApprovalsPage() {
               >
                 {tab.label}
                 {pendingCounts[tab.id] > 0 && (
-                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center z-20">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1.5">
                     {pendingCounts[tab.id]}
                   </span>
                 )}
               </button>
             ))}
-          </div>
         </div>
-
-        <button
-          onClick={() => handleScroll('right')}
-          className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm z-10"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
       </div>
 
       <div className="flex gap-4 mb-6">
@@ -236,8 +218,8 @@ export function ApprovalsPage() {
           {filteredApprovals.map((approval) => (
             <div
               key={approval.id}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
               onClick={() => setSelectedApproval(approval)}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -283,10 +265,6 @@ export function ApprovalsPage() {
                   </div>
                 )}
               </div>
-
-              {selectedApproval?.id === approval.id && (
-                <ApprovalDetail approval={approval} />
-              )}
             </div>
           ))}
         </div>
@@ -295,7 +273,7 @@ export function ApprovalsPage() {
       {/* Onay Detay Popup */}
       {selectedApproval && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-3xl">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <div>
                 <h3 className="font-medium">Onay Detayı</h3>
@@ -311,7 +289,7 @@ export function ApprovalsPage() {
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto">
               <ApprovalDetail approval={selectedApproval} />
             </div>
 

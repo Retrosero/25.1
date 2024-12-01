@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 import { User, UserRole } from '../../types/user';
 import { permissions } from '../../data/permissions';
 import { useUsers } from '../../hooks/use-users';
@@ -14,6 +14,11 @@ export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProp
   const [userPermissions, setUserPermissions] = useState(user.permissions);
   const [applyToRole, setApplyToRole] = useState(false);
   const [showRoleDefaults, setShowRoleDefaults] = useState(false);
+  const [selectedPermissions, setSelectedPermissions] = useState<Record<string, {
+    accessType: 'permanent' | 'temporary';
+    duration?: number;
+    durationType?: 'hours' | 'days';
+  }>>({});
 
   // Modüllere göre izinleri grupla
   const groupedPermissions = permissions.reduce((acc, permission) => {
@@ -29,6 +34,18 @@ export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProp
       p.id === permissionId ? { ...p, allowed } : p
     );
     setUserPermissions(newPermissions);
+    
+    if (allowed) {
+      setSelectedPermissions(prev => ({
+        ...prev,
+        [permissionId]: { accessType: 'permanent' }
+      }));
+    } else {
+      setSelectedPermissions(prev => {
+        const { [permissionId]: _, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleSave = () => {
@@ -37,14 +54,16 @@ export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProp
       // Update role permissions
       const rolePerms = userPermissions.map(p => ({
         id: p.id,
-        allowed: p.allowed
+        allowed: p.allowed,
+        ...(selectedPermissions[p.id] || {})
       }));
       updateRolePermissions(user.role, rolePerms);
     } else {
       // Update user-specific permissions
       const userPerms = userPermissions.map(p => ({
         id: p.id,
-        allowed: p.allowed
+        allowed: p.allowed,
+        ...(selectedPermissions[p.id] || {})
       }));
       updateUserPermissions(user.id, userPerms);
     }
@@ -133,6 +152,71 @@ export function UserPermissionsPopup({ user, onClose }: UserPermissionsPopupProp
                         <div>
                           <p className="font-medium">{permission.name}</p>
                           <p className="text-sm text-gray-500">{permission.description}</p>
+                          {currentPermission?.allowed && (
+                            <div className="mt-2 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`access-type-${permission.id}`}
+                                  checked={selectedPermissions[permission.id]?.accessType === 'permanent'}
+                                  onChange={() => setSelectedPermissions(prev => ({
+                                    ...prev,
+                                    [permission.id]: { accessType: 'permanent' }
+                                  }))}
+                                  className="w-4 h-4"
+                                />
+                                <span className="text-sm">Kalıcı Erişim</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`access-type-${permission.id}`}
+                                  checked={selectedPermissions[permission.id]?.accessType === 'temporary'}
+                                  onChange={() => setSelectedPermissions(prev => ({
+                                    ...prev,
+                                    [permission.id]: { 
+                                      accessType: 'temporary',
+                                      duration: 24,
+                                      durationType: 'hours'
+                                    }
+                                  }))}
+                                  className="w-4 h-4"
+                                />
+                                <span className="text-sm">Geçici Erişim</span>
+                              </div>
+                              {selectedPermissions[permission.id]?.accessType === 'temporary' && (
+                                <div className="flex items-center gap-2 ml-6">
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={selectedPermissions[permission.id]?.duration || 24}
+                                    onChange={(e) => setSelectedPermissions(prev => ({
+                                      ...prev,
+                                      [permission.id]: {
+                                        ...prev[permission.id],
+                                        duration: parseInt(e.target.value)
+                                      }
+                                    }))}
+                                    className="w-20 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700"
+                                  />
+                                  <select
+                                    value={selectedPermissions[permission.id]?.durationType || 'hours'}
+                                    onChange={(e) => setSelectedPermissions(prev => ({
+                                      ...prev,
+                                      [permission.id]: {
+                                        ...prev[permission.id],
+                                        durationType: e.target.value as 'hours' | 'days'
+                                      }
+                                    }))}
+                                    className="px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-700"
+                                  >
+                                    <option value="hours">Saat</option>
+                                    <option value="days">Gün</option>
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           {showRoleDefaults && (
                             <p className="text-xs text-primary-600">
                               Varsayılan: {currentPermission?.allowed ? 'İzin Var' : 'İzin Yok'}

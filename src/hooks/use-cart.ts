@@ -13,7 +13,7 @@ type CartState = {
   discount: number;
   orderNote: string;
   addItem: (productId: string, quantity: number) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  updateQuantity: (productId: string, quantity: number, note?: string) => void;
   removeItem: (productId: string) => void;
   setItemNote: (productId: string, note: string) => void;
   setDiscount: (discount: number) => void;
@@ -46,7 +46,7 @@ export const useCart = create<CartState>()(
         }
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, quantity, note?: string) => {
         const items = get().items;
         if (quantity <= 0) {
           set({ items: items.filter(item => item.productId !== productId) });
@@ -55,9 +55,7 @@ export const useCart = create<CartState>()(
           if (existingItem) {
             set({
               items: items.map(item =>
-                item.productId === productId
-                  ? { ...item, quantity }
-                  : item
+                item.productId === productId ? { ...item, quantity, ...(note !== undefined && { note }) } : item
               ),
             });
           } else {

@@ -20,17 +20,34 @@ export const useAccessRequests = create<AccessRequestsState>()(
       addRequest: (request) => {
         const { addNotification } = useNotifications.getState();
         
+        // Calculate validUntil date for temporary access
+        let validUntil;
+        if (request.accessType === 'temporary' && request.duration) {
+          const now = new Date();
+          if (request.durationType === 'hours') {
+            validUntil = new Date(now.getTime() + request.duration * 60 * 60 * 1000);
+          } else if (request.durationType === 'days') {
+            validUntil = new Date(now.getTime() + request.duration * 24 * 60 * 60 * 1000);
+          }
+        }
+
         const newRequest: AccessRequest = {
           ...request,
           id: `REQ${Math.random().toString(36).substr(2, 9)}`,
           status: 'pending',
           requestDate: new Date().toISOString(),
+          accessType: request.accessType || 'permanent',
+          validUntil: validUntil?.toISOString(),
         };
 
         addNotification({
           type: 'access_request',
           title: 'Yeni Erişim Talebi',
-          message: `${request.userName} kullanıcısı ${request.permissionName} izni için erişim talebinde bulundu.`,
+          message: `${request.userName} kullanıcısı ${request.permissionName} izni için ${
+            request.accessType === 'temporary' ? 
+            `${request.duration} ${request.durationType === 'hours' ? 'saatlik' : 'günlük'}` : 
+            'kalıcı'
+          } erişim talebinde bulundu.`,
           date: new Date().toISOString(),
           data: newRequest,
         });
@@ -52,6 +69,25 @@ export const useAccessRequests = create<AccessRequestsState>()(
               id: request.permissionId,
               allowed: true
             }]);
+
+            // If temporary access, schedule removal
+            if (request.accessType === 'temporary' && request.validUntil) {
+              const timeout = new Date(request.validUntil).getTime() - Date.now();
+              setTimeout(() => {
+                updateUserPermissions(request.userId, [{
+                  id: request.permissionId,
+                  allowed: false
+                }]);
+                
+                addNotification({
+                  type: 'system',
+                  title: 'Erişim Süresi Doldu',
+                  message: `${request.permissionName} için geçici erişim süreniz doldu.`,
+                  date: new Date().toISOString(),
+                  userId: request.userId,
+                });
+              }, timeout);
+            }
           }
 
           addNotification({

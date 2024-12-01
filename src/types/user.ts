@@ -39,6 +39,10 @@ export type AccessRequest = {
   responseDate?: string;
   respondedBy?: string;
   note?: string;
+  validUntil?: string;
+  accessType: 'permanent' | 'temporary';
+  duration?: number;
+  durationType?: 'hours' | 'days';
 };
 
 export type Notification = {

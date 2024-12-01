@@ -9,8 +9,8 @@ interface TransactionPreviewProps {
 
 export function TransactionPreview({ transaction, onClose, onPrint }: TransactionPreviewProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-3xl">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-bold">{transaction.type === 'sale' ? 'Satış Faturası' :
              transaction.type === 'payment' ? 'Tahsilat Makbuzu' :
@@ -32,7 +32,7 @@ export function TransactionPreview({ transaction, onClose, onPrint }: Transactio
           </div>
         </div>
         
-        <div id="transaction-content" className="p-6">
+        <div id="transaction-content" className="flex-1 p-6 overflow-y-auto">
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
               <h3 className="font-medium mb-2">Müşteri Bilgileri</h3>

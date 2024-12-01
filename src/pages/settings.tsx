@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
   ShoppingCart, 
+  Calendar,
   Package,
   Wallet,
   RefreshCcw,
@@ -21,7 +22,14 @@ import {
   Moon,
   Sidebar,
   Menu,
-  GripVertical
+  GripVertical,
+  GripHorizontal,
+  ListTodo,
+  MapPin,
+  PackageCheck,
+  UserCog,
+  Truck,
+  ClipboardList
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useSettings } from '../hooks/use-settings';
@@ -61,7 +69,7 @@ export function SettingsPage() {
   
   const [activeTab, setActiveTab] = useState('appearance');
 
-  const handleDragEnd = (result: any) => {
+  const handleProductFieldsDragEnd = (result: any) => {
     if (!result.destination) return;
 
     const items = Array.from(productCardFields);
@@ -76,6 +84,42 @@ export function SettingsPage() {
 
     reorderProductCardFields(reorderedItems);
   };
+
+  const handleDashboardCardsDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const items = [...dashboardOrder];
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setDashboardOrder(items);
+  };
+
+  // Initialize dashboard order if empty
+  useEffect(() => {
+    if (dashboardOrder.length === 0) {
+      setDashboardOrder(menuCards.map(card => card.id));
+    }
+  }, [dashboardOrder.length, setDashboardOrder]);
+
+  const menuCards = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'customers', label: 'Müşteriler', icon: Users },
+    { id: 'sales', label: 'Satış', icon: ShoppingCart },
+    { id: 'calendar', label: 'Takvim', icon: Calendar },
+    { id: 'todos', label: 'Görevler', icon: ListTodo },
+    { id: 'products', label: 'Ürünler', icon: Package },
+    { id: 'payments', label: 'Tahsilat', icon: Wallet },
+    { id: 'returns', label: 'İadeler', icon: RefreshCcw },
+    { id: 'daily-report', label: 'Gün Sonu', icon: FileText },
+    { id: 'approvals', label: 'Onay Bekleyenler', icon: AlertCircle },
+    { id: 'orders', label: 'Siparişler', icon: PackageCheck },
+    { id: 'delivery', label: 'Teslimat', icon: MapPin },
+    { id: 'inventory', label: 'Sayım', icon: ClipboardList },
+    { id: 'users', label: 'Kullanıcı Yönetimi', icon: UserCog },
+    { id: 'settings', label: 'Ayarlar', icon: Settings },
+    { id: 'cargo', label: 'Kargo Teslim', icon: Truck }
+  ];
 
   return (
     <div className="p-6">
@@ -258,7 +302,7 @@ export function SettingsPage() {
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                   Ürün Kartı Alanları
                 </label>
-                <DragDropContext onDragEnd={handleDragEnd}>
+                <DragDropContext onDragEnd={handleProductFieldsDragEnd}>
                   <Droppable droppableId="product-card-fields">
                     {(provided) => (
                       <div
@@ -341,7 +385,6 @@ export function SettingsPage() {
         {activeTab === 'dashboard' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold mb-4">Dashboard Ayarları</h2>
-            
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -372,6 +415,63 @@ export function SettingsPage() {
                   </button>
                 </div>
               </div>
+
+              {dashboardLayout === 'cards' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                    Kartlar ve Sıralama
+                  </label>
+                  <DragDropContext onDragEnd={handleDashboardCardsDragEnd}>
+                    <Droppable droppableId="dashboard-cards">
+                      {(provided) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="space-y-2"
+                        >
+                          {dashboardOrder.map((cardId, index) => {
+                            const card = menuCards.find(c => c.id === cardId);
+                            if (!card) return null;
+                            const Icon = card.icon;
+
+                            return (
+                              <Draggable
+                                key={cardId}
+                                draggableId={cardId}
+                                index={index}
+                              >
+                                {(provided) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                                  >
+                                    <div {...provided.dragHandleProps} className="cursor-move">
+                                      <GripHorizontal className="w-5 h-5 text-gray-400" />
+                                    </div>
+                                    <label className="flex items-center flex-1 gap-3">
+                                      <input
+                                        type="checkbox"
+                                        checked={dashboardCards[cardId] !== false}
+                                        onChange={(e) => setDashboardCards({ [cardId]: e.target.checked })}
+                                        className="rounded border-gray-300"
+                                      />
+                                      <Icon className="w-5 h-5 text-gray-500" />
+                                      <span>{card.label}</span>
+                                    </label>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                </div>
+              )}
+
 
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">

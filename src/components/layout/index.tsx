@@ -17,12 +17,16 @@ export function Layout() {
       <div className="pt-16 min-h-[calc(100vh-4rem)]">
         {navigationType === 'sidebar' && (
           <>
-            <Sidebar isOpen={isSidebarOpen} onOpenChange={setIsSidebarOpen} />
-            {/* Sidebar Toggle Button - Always Visible */}
+            <div className={cn( 
+              "fixed top-0 bottom-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 pt-16",
+              isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            )}>
+              <Sidebar isOpen={isSidebarOpen} onOpenChange={setIsSidebarOpen} />
+            </div>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className={cn(
-                "fixed top-20 z-50 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-lg transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700",
+                "fixed top-4 z-50 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-r-lg shadow-lg transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700",
                 isSidebarOpen ? "left-64" : "left-0"
               )}
             >
@@ -36,9 +40,9 @@ export function Layout() {
         )}
         <main 
           className={cn(
-            'transition-all duration-300',
-            navigationType === 'bottom' ? 'pb-20' : '',
-            navigationType === 'sidebar' && isSidebarOpen ? 'ml-64' : ''
+            'flex-1 transition-all duration-300',
+            'pb-20',
+            navigationType === 'sidebar' && isSidebarOpen && 'ml-64'
           )}
         >
           <div className="container mx-auto px-2 sm:px-4">

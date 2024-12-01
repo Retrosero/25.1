@@ -1,5 +1,8 @@
 import { X, Printer } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
+import { usePayments } from '../../hooks/use-payments';
+import { useState } from 'react';
+import { ImageCarousel } from '../products/image-carousel';
 
 type ReceiptPreviewProps = {
   data: {
@@ -14,6 +17,7 @@ type ReceiptPreviewProps = {
     };
     type: 'tahsilat' | 'tediye';
     payments: Array<{
+      id: string;
       type: string;
       data: any;
     }>;
@@ -25,6 +29,12 @@ type ReceiptPreviewProps = {
 
 export function ReceiptPreview({ data, onClose, onPrint }: ReceiptPreviewProps) {
   const total = data.payments.reduce((sum, payment) => sum + Number(payment.data.amount), 0);
+  const { getAttachments } = usePayments();
+  const [showAttachments, setShowAttachments] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
+
+  const attachments = selectedPayment ? 
+    getAttachments(selectedPayment).flatMap(a => a.files) : [];
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -91,6 +101,17 @@ export function ReceiptPreview({ data, onClose, onPrint }: ReceiptPreviewProps) 
                         ) : ''}
                       </span>
                     )}
+                    {(payment.type === 'cek' || payment.type === 'senet') && (
+                      <button
+                        onClick={() => {
+                          setSelectedPayment(payment.id);
+                          setShowAttachments(true);
+                        }}
+                        className="ml-2 p-1 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/50 rounded"
+                      >
+                        <Image className="w-4 h-4" />
+                      </button>
+                    )}
                   </td>
                   <td className="text-right">{formatCurrency(Number(payment.data.amount))}</td>
                 </tr>
@@ -112,6 +133,34 @@ export function ReceiptPreview({ data, onClose, onPrint }: ReceiptPreviewProps) 
           )}
         </div>
       </div>
+      
+      {showAttachments && attachments.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-medium">Evrak Görüntüleri</h3>
+              <button
+                onClick={() => {
+                  setShowAttachments(false);
+                  setSelectedPayment(null);
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <ImageCarousel 
+                images={attachments.map(file => ({
+                  id: file.id,
+                  url: file.url,
+                  order: 0
+                }))}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

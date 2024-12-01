@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Smooth Scrolling */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Modern Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;

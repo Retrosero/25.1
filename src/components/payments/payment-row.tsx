@@ -1,6 +1,7 @@
 import { Trash2, Upload, Camera } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useState } from 'react';
+import { usePayments } from '../../hooks/use-payments';
 
 type PaymentRowProps = {
   type: 'nakit' | 'cek' | 'senet' | 'krediKarti' | 'havale';
@@ -11,6 +12,7 @@ type PaymentRowProps = {
 
 export function PaymentRow({ type, onDelete, onChange, data }: PaymentRowProps) {
   const [images, setImages] = useState<string[]>(data.images || []);
+  const { addAttachment } = usePayments();
 
   const handleChange = (field: string, value: string | string[]) => {
     onChange({ ...data, [field]: value });
@@ -18,10 +20,25 @@ export function PaymentRow({ type, onDelete, onChange, data }: PaymentRowProps) 
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newImages = files.map(file => URL.createObjectURL(file));
-    const updatedImages = [...images, ...newImages];
-    setImages(updatedImages);
-    handleChange('images', updatedImages);
+    
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        const newAttachment = {
+          paymentId: data.id || Math.random().toString(36).substr(2, 9),
+          type: type === 'cek' ? 'check' : 'promissory',
+          files: [{
+            id: Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            url: base64,
+            uploadDate: new Date().toISOString()
+          }]
+        };
+        addAttachment(newAttachment);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleCameraCapture = async () => {

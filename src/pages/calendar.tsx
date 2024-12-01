@@ -190,9 +190,9 @@ export function CalendarPage() {
             </div>
           </div>
 
-          <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Calendar Grid */}
-        <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="w-full lg:w-auto lg:flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setCurrentDate(subMonths(currentDate, 1))}
@@ -261,7 +261,7 @@ export function CalendarPage() {
 
         {/* Selected Day Details */}
         {selectedDate && (
-          <div className="w-96 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="w-full lg:w-96 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">
                 {format(selectedDate, 'd MMMM yyyy', { locale: tr })}
@@ -320,6 +320,53 @@ export function CalendarPage() {
             </div>
           </div>
         )}
+      </div>
+      
+      {/* Monthly Summary Table */}
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <h2 className="text-lg font-medium mb-4">Aylık Özet</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left p-2">Ay</th>
+                <th className="text-right p-2">Gelecek Ödemeler</th>
+                <th className="text-right p-2">Giden Ödemeler</th>
+                <th className="text-right p-2">Net</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 12 }, (_, i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() + i);
+                const monthStr = date.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
+                
+                const monthNotes = allNotes.filter(note => {
+                  const noteDate = new Date(note.date);
+                  return noteDate.getMonth() === date.getMonth() && 
+                         noteDate.getFullYear() === date.getFullYear();
+                });
+
+                const incoming = monthNotes
+                  .filter(n => n.type === 'payment')
+                  .reduce((sum, n) => sum + (n.amount || 0), 0);
+                
+                const outgoing = monthNotes
+                  .filter(n => n.type === 'expense')
+                  .reduce((sum, n) => sum + (n.amount || 0), 0);
+
+                return (
+                  <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
+                    <td className="p-2">{monthStr}</td>
+                    <td className="text-right text-green-600">{formatCurrency(incoming)}</td>
+                    <td className="text-right text-red-600">{formatCurrency(outgoing)}</td>
+                    <td className="text-right font-medium">{formatCurrency(incoming - outgoing)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {showAddNote && (
